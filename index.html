@@ -681,6 +681,20 @@
                 `;
             } else {
                 resultDiv.innerHTML = "Code not found in database.<br>Check and try again.";
+          
+            <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('./sw.js')
+        .then((reg) => console.log('Service Worker Active! Scope:', reg.scope))
+        .catch((err) => console.error('Service Worker Registration Failed:', err));
+    });
+  }
+</script>
+</body>
+</html>
+          
             }
         }
     </script>
