@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Martins Super Calculator & Detector</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --calc-bg: #8b0000; /* Deep Red */
+            --calc-edge: #5c0000;
+            --btn-gold: #d4af37;
+            --btn-gold-hover: #f3e5ab;
+            --btn-gold-active: #aa8c2c;
+            --btn-blue: #007bff;
+            --btn-blue-hover: #4da3ff;
+            --display-bg: #222;
+            --text-color: #fff;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* 3D Calculator Body */
+        .calculator {
+            background-color: var(--calc-bg);
+            width: 380px;
+            padding: 25px;
+            border-radius: 30px;
+            box-shadow: 
+                0px 5px 0px var(--calc-edge),
+                0px 15px 20px rgba(0, 0, 0, 0.7),
+                inset 0px 2px 5px rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            transform: perspective(1000px) rotateX(10deg);
+            overflow: hidden;
+        }
+
+        /* Top Bar: Clock and Marquee */
+        .top-bar {
+            background-color: #111;
+            padding: 8px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #333;
+        }
+
+        .clock {
+            color: #00ff00;
+            text-align: center;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-shadow: 0 0 5px #00ff00;
+            margin-bottom: 5px;
+        }
+
+        .marquee-container {
+            width: 100%;
+            overflow: hidden;
+            background-color: #000;
+            border-radius: 3px;
+        }
+
+        .marquee-text {
+            color: var(--btn-gold);
+            font-weight: bold;
+            white-space: nowrap;
+            animation: scroll-left 10s linear infinite;
+            display: inline-block;
+            padding: 3px 0;
+            font-size: 0.9rem;
+        }
+
+        @keyframes scroll-left {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* Displays */
+        .screens {
+            background-color: var(--display-bg);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: inset 0px 4px 10px rgba(0,0,0,0.8);
+            border: 2px solid #444;
+        }
+
+        .previous-operand {
+            color: #aaa;
+            font-size: 1rem;
+            text-align: right;
+            min-height: 1.2rem;
+            overflow: hidden;
+        }
+
+        .current-operand {
+            color: #00ff00;
+            font-size: 2rem;
+            text-align: right;
+            font-family: 'Courier New', Courier, monospace;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        /* Controls / Grid */
+        .unit-controls {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        select {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid var(--btn-gold);
+            border-radius: 5px;
+            padding: 5px;
+            font-size: 0.9rem;
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        /* 3D Buttons */
+        button {
+            background-color: var(--btn-gold);
+            color: #000;
+            border: none;
+            padding: 12px 0;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0px 4px 0px #8a6d21, 0px 5px 10px rgba(0,0,0,0.5);
+            transition: all 0.1s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button:hover {
+            background-color: var(--btn-gold-hover);
+        }
+
+        button:active {
+            transform: translateY(3px);
+            box-shadow: 0px 1px 0px #8a6d21, 0px 2px 5px rgba(0,0,0,0.5);
+        }
+
+        button.op-btn { background-color: #e5c158; }
+        
+        button.clear-btn {
+            background-color: #ff6b6b;
+            color: #fff;
+            box-shadow: 0px 4px 0px #b33939;
+        }
+        button.clear-btn:hover { background-color: #ff8787; }
+        button.clear-btn:active { box-shadow: 0px 1px 0px #b33939; }
+
+        /* The blue "Country Code Checker" button */
+        button.blue-btn {
+            background-color: var(--btn-blue);
+            color: #fff;
+            box-shadow: 0px 4px 0px #004085, 0px 5px 10px rgba(0,0,0,0.5);
+            grid-column: span 5; /* Spans across the entire row */
+            font-size: 0.95rem;
+            padding: 14px 0;
+        }
+        button.blue-btn:hover { background-color: var(--btn-blue-hover); }
+        button.blue-btn:active { box-shadow: 0px 1px 0px #004085; }
+
+        /* Country Code Screen Overlay */
+        .country-detector-ui {
+            display: none;
+            background-color: var(--calc-bg);
+            padding: 5px 0 0 0;
+            animation: slideUp 0.3s ease-in-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .detector-title {
+            color: var(--btn-gold);
+            text-align: center;
+            margin-top: 0;
+            font-size: 1.2rem;
+            text-shadow: 0px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .detector-input {
+            width: 90%;
+            margin: 10px auto;
+            display: block;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #444;
+            background-color: var(--display-bg);
+            color: #00ff00;
+            font-size: 1.2rem;
+            text-align: center;
+            font-family: 'Courier New', Courier, monospace;
+            box-shadow: inset 0px 4px 10px rgba(0,0,0,0.8);
+        }
+
+        .lookup-btn {
+            width: 90%;
+            margin: 10px auto;
+            display: block;
+        }
+
+        .result-box {
+            margin: 15px auto;
+            width: 90%;
+            padding: 15px;
+            background-color: var(--display-bg);
+            border-radius: 10px;
+            min-height: 50px;
+            border: 2px solid #444;
+            box-shadow: inset 0px 4px 10px rgba(0,0,0,0.8);
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .highlight {
+            color: #00ff00;
+            font-weight: bold;
+            font-size: 1.3rem;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+        }
+
+        .region-tag {
+            display: inline-block;
+            margin-top: 5px;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #000;
+        }
+        .africa-bg { background-color: #ffd700; }
+        .non-africa-bg { background-color: #00ffff; }
+
+        .back-btn {
+            width: 90%;
+            margin: 15px auto 0 auto;
+            background-color: #ff6b6b;
+            color: white;
+            box-shadow: 0px 4px 0px #b33939;
+        }
+        .back-btn:hover { background-color: #ff8787; }
+        .back-btn:active { box-shadow: 0px 1px 0px #b33939; }
+    </style>
+</head>
+<body>
+
+    <div class="calculator">
+        <div class="top-bar">
+            <div id="clock" class="clock">00:00:00</div>
+            <div class="marquee-container">
+                <div class="marquee-text">Martins Super Calculator</div>
+            </div>
+        </div>
+
+        <div class="screens">
+            <div id="previous-op" class="previous-operand"></div>
+            <div id="current-op" class="current-operand">0</div>
+        </div>
+
+        <div id="calculator-ui">
+            <div class="unit-controls">
+                <select id="conversion-type">
+                    <option value="km-m">Kilometers to Miles</option>
+                    <option value="m-km">Miles to Kilometers</option>
+                    <option value="c-f">Celsius to Fahrenheit</option>
+                    <option value="f-c">Fahrenheit to Celsius</option>
+                    <option value="kg-lb">Kg to Pounds</option>
+                </select>
+                <button onclick="convertUnit()">Convert</button>
+            </div>
+
+            <div class="buttons-grid">
+                <button class="clear-btn" onclick="clearDisplay()">AC</button>
+                <button class="clear-btn" onclick="deleteLast()">DEL</button>
+                <button onclick="appendValue('(')">(</button>
+                <button onclick="appendValue(')')">)</button>
+                <button class="op-btn" onclick="appendValue('/')">÷</button>
+                
+                <button onclick="trig('sin')">sin</button>
+                <button onclick="appendValue('7')">7</button>
+                <button onclick="appendValue('8')">8</button>
+                <button onclick="appendValue('9')">9</button>
+                <button class="op-btn" onclick="appendValue('*')">×</button>
+                
+                <button onclick="trig('cos')">cos</button>
+                <button onclick="appendValue('4')">4</button>
+                <button onclick="appendValue('5')">5</button>
+                <button onclick="appendValue('6')">6</button>
+                <button class="op-btn" onclick="appendValue('-')">-</button>
+                
+                <button onclick="trig('tan')">tan</button>
+                <button onclick="appendValue('1')">1</button>
+                <button onclick="appendValue('2')">2</button>
+                <button onclick="appendValue('3')">3</button>
+                <button class="op-btn" onclick="appendValue('+')">+</button>
+                
+                <button onclick="mathFunc('log')">log</button>
+                <button onclick="mathFunc('sqrt')">√</button>
+                <button onclick="appendValue('0')">0</button>
+                <button onclick="appendValue('.')">.</button>
+                <button class="op-btn" onclick="calculate()">=</button>
+
+                <button class="blue-btn" onclick="toggleDetector(true)">Country Code Checker</button>
+            </div>
+        </div>
+
+        <div id="detector-ui" class="country-detector-ui">
+            <h3 class="detector-title">Dialing Code Detector</h3>
+            <input type="text" id="code-input" class="detector-input" placeholder="Enter code (e.g. 234)" maxlength="5">
+            <button class="lookup-btn" onclick="detectCountry()">Lookup Code</button>
+            
+            <div class="result-box">
+                <div id="result-text" style="color:#fff;">Enter a code and tap Lookup</div>
+            </div>
+
+            <button class="back-btn" onclick="toggleDetector(false)">🔙 Back to Calculator</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. Real-Time Clock ---
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- 2. Calculator Logic ---
+        const currentOpText = document.getElementById('current-op');
+        const previousOpText = document.getElementById('previous-op');
+        let currentInput = '0';
+        let shouldResetScreen = false;
+
+        function updateDisplay() { currentOpText.textContent = currentInput; }
+
+        function appendValue(value) {
+            if (currentInput === '0' || shouldResetScreen) { currentInput = value; shouldResetScreen = false; }
+            else { currentInput += value; }
+            updateDisplay();
+        }
+
+        function clearDisplay() { currentInput = '0'; previousOpText.textContent = ''; updateDisplay(); }
+
+        function deleteLast() {
+            if (currentInput.length > 1) currentInput = currentInput.slice(0, -1);
+            else currentInput = '0';
+            updateDisplay();
+        }
+
+        function calculate() {
+            try {
+                let expression = currentInput.replace(/×/g, '*').replace(/÷/g, '/');
+                previousOpText.textContent = currentInput + ' =';
+                currentInput = String(Function('"use strict";return (' + expression + ')')());
+                if(currentInput === "Infinity" || currentInput === "NaN") currentInput = "Error";
+            } catch { currentInput = "Error"; }
+            shouldResetScreen = true;
+            updateDisplay();
+        }
+
+        function trig(func) {
+            try {
+                let val = parseFloat(currentInput);
+                let radians = val * (Math.PI / 180);
+                let result = (func === 'sin') ? Math.sin(radians) : (func === 'cos') ? Math.cos(radians) : Math.tan(radians);
+                previousOpText.textContent = `${func}(${val}°) =`;
+                currentInput = String(parseFloat(result.toFixed(6)));
+                shouldResetScreen = true;
+                updateDisplay();
+            } catch { currentInput = "Error"; updateDisplay(); }
+        }
+
+        function mathFunc(func) {
+            try {
+                let val = parseFloat(currentInput);
+                let result = (func === 'log') ? Math.log10(val) : Math.sqrt(val);
+                previousOpText.textContent = `${func}(${val}) =`;
+                currentInput = String(parseFloat(result.toFixed(6)));
+                shouldResetScreen = true;
+                updateDisplay();
+            } catch { currentInput = "Error"; updateDisplay(); }
+        }
+
+        function convertUnit() {
+            const type = document.getElementById('conversion-type').value;
+            let val = parseFloat(currentInput);
+            let result; let unitIn = '', unitOut = '';
+            if (isNaN(val)) { currentInput = "Error"; updateDisplay(); return; }
+
+            switch (type) {
+                case 'km-m': result = val * 0.621371; unitIn = 'km'; unitOut = 'mi'; break;
+                case 'm-km': result = val / 0.621371; unitIn = 'mi'; unitOut = 'km'; break;
+                case 'c-f': result = (val * 9/5) + 32; unitIn = '°C'; unitOut = '°F'; break;
+                case 'f-c': result = (val - 32) * 5/9; unitIn = '°F'; unitOut = '°C'; break;
+                case 'kg-lb': result = val * 2.20462; unitIn = 'kg'; unitOut = 'lbs'; break;
+            }
+            previousOpText.textContent = `${val}${unitIn} converted to:`;
+            currentInput = String(parseFloat(result.toFixed(4))) + " " + unitOut;
+            shouldResetScreen = true; updateDisplay();
+        }
+
+        // --- 3. UI Toggle Logic ---
+        function toggleDetector(show) {
+            document.getElementById('calculator-ui').style.display = show ? 'none' : 'block';
+            document.getElementById('detector-ui').style.display = show ? 'block' : 'none';
+        }
+
+        // --- 4. Country Database (54 African & 150 Non-African) ---
+        const dialCodes = {
+            // ================= 54 AFRICAN COUNTRIES =================
+            "20":  { country: "Egypt", region: "Africa" },
+            "211": { country: "South Sudan", region: "Africa" },
+            "212": { country: "Morocco", region: "Africa" },
+            "213": { country: "Algeria", region: "Africa" },
+            "216": { country: "Tunisia", region: "Africa" },
+            "218": { country: "Libya", region: "Africa" },
+            "220": { country: "Gambia", region: "Africa" },
+            "221": { country: "Senegal", region: "Africa" },
+            "222": { country: "Mauritania", region: "Africa" },
+            "223": { country: "Mali", region: "Africa" },
+            "224": { country: "Guinea", region: "Africa" },
+            "225": { country: "Côte d'Ivoire", region: "Africa" },
+            "226": { country: "Burkina Faso", region: "Africa" },
+            "227": { country: "Niger", region: "Africa" },
+            "228": { country: "Togo", region: "Africa" },
+            "229": { country: "Benin", region: "Africa" },
+            "230": { country: "Mauritius", region: "Africa" },
+            "231": { country: "Liberia", region: "Africa" },
+            "232": { country: "Sierra Leone", region: "Africa" },
+            "233": { country: "Ghana", region: "Africa" },
+            "234": { country: "Nigeria", region: "Africa" },
+            "235": { country: "Chad", region: "Africa" },
+            "236": { country: "Central African Republic", region: "Africa" },
+            "237": { country: "Cameroon", region: "Africa" },
+            "238": { country: "Cabo Verde", region: "Africa" },
+            "239": { country: "São Tomé and Príncipe", region: "Africa" },
+            "240": { country: "Equatorial Guinea", region: "Africa" },
+            "241": { country: "Gabon", region: "Africa" },
+            "242": { country: "Republic of the Congo", region: "Africa" },
+            "243": { country: "Democratic Republic of the Congo", region: "Africa" },
+            "244": { country: "Angola", region: "Africa" },
+            "245": { country: "Guinea-Bissau", region: "Africa" },
+            "248": { country: "Seychelles", region: "Africa" },
+            "249": { country: "Sudan", region: "Africa" },
+            "250": { country: "Rwanda", region: "Africa" },
+            "251": { country: "Ethiopia", region: "Africa" },
+            "252": { country: "Somalia", region: "Africa" },
+            "253": { country: "Djibouti", region: "Africa" },
+            "254": { country: "Kenya", region: "Africa" },
+            "255": { country: "Tanzania", region: "Africa" },
+            "256": { country: "Uganda", region: "Africa" },
+            "257": { country: "Burundi", region: "Africa" },
+            "258": { country: "Mozambique", region: "Africa" },
+            "260": { country: "Zambia", region: "Africa" },
+            "261": { country: "Madagascar", region: "Africa" },
+            "263": { country: "Zimbabwe", region: "Africa" },
+            "264": { country: "Namibia", region: "Africa" },
+            "265": { country: "Malawi", region: "Africa" },
+            "266": { country: "Lesotho", region: "Africa" },
+            "267": { country: "Botswana", region: "Africa" },
+            "268": { country: "Eswatini", region: "Africa" },
+            "269": { country: "Comoros", region: "Africa" },
+            "27":  { country: "South Africa", region: "Africa" },
+            "291": { country: "Eritrea", region: "Africa" },
+
+            // ================= 150 NON-AFRICAN COUNTRIES =================
+            "1":    { country: "USA / Canada", region: "Non-Africa" },
+            "7":    { country: "Russia / Kazakhstan", region: "Non-Africa" },
+            "30":  { country: "Greece", region: "Non-Africa" },
+            "31":  { country: "Netherlands", region: "Non-Africa" },
+            "32":  { country: "Belgium", region: "Non-Africa" },
+            "33":  { country: "France", region: "Non-Africa" },
+            "34":  { country: "Spain", region: "Non-Africa" },
+            "36":  { country: "Hungary", region: "Non-Africa" },
+            "39":  { country: "Italy", region: "Non-Africa" },
+            "40":  { country: "Romania", region: "Non-Africa" },
+            "41":  { country: "Switzerland", region: "Non-Africa" },
+            "43":  { country: "Austria", region: "Non-Africa" },
+            "44":  { country: "United Kingdom", region: "Non-Africa" },
+            "45":  { country: "Denmark", region: "Non-Africa" },
+            "46":  { country: "Sweden", region: "Non-Africa" },
+            "47":  { country: "Norway", region: "Non-Africa" },
+            "48":  { country: "Poland", region: "Non-Africa" },
+            "49":  { country: "Germany", region: "Non-Africa" },
+            "51":  { country: "Peru", region: "Non-Africa" },
+            "52":  { country: "Mexico", region: "Non-Africa" },
+            "53":  { country: "Cuba", region: "Non-Africa" },
+            "54":  { country: "Argentina", region: "Non-Africa" },
+            "55":  { country: "Brazil", region: "Non-Africa" },
+            "56":  { country: "Chile", region: "Non-Africa" },
+            "57":  { country: "Colombia", region: "Non-Africa" },
+            "58":  { country: "Venezuela", region: "Non-Africa" },
+            "60":  { country: "Malaysia", region: "Non-Africa" },
+            "61":  { country: "Australia", region: "Non-Africa" },
+            "62":  { country: "Indonesia", region: "Non-Africa" },
+            "63":  { country: "Philippines", region: "Non-Africa" },
+            "64":  { country: "New Zealand", region: "Non-Africa" },
+            "65":  { country: "Singapore", region: "Non-Africa" },
+            "66":  { country: "Thailand", region: "Non-Africa" },
+            "81":  { country: "Japan", region: "Non-Africa" },
+            "82":  { country: "South Korea", region: "Non-Africa" },
+            "84":  { country: "Vietnam", region: "Non-Africa" },
+            "86":  { country: "China", region: "Non-Africa" },
+            "90":  { country: "Turkey", region: "Non-Africa" },
+            "91":  { country: "India", region: "Non-Africa" },
+            "92":  { country: "Pakistan", region: "Non-Africa" },
+            "93":  { country: "Afghanistan", region: "Non-Africa" },
+            "94":  { country: "Sri Lanka", region: "Non-Africa" },
+            "95":  { country: "Myanmar", region: "Non-Africa" },
+            "98":  { country: "Iran", region: "Non-Africa" },
+            "297": { country: "Aruba", region: "Non-Africa" },
+            "298": { country: "Faroe Islands", region: "Non-Africa" },
+            "299": { country: "Greenland", region: "Non-Africa" },
+            "350": { country: "Gibraltar", region: "Non-Africa" },
+            "351": { country: "Portugal", region: "Non-Africa" },
+            "352": { country: "Luxembourg", region: "Non-Africa" },
+            "353": { country: "Ireland", region: "Non-Africa" },
+            "354": { country: "Iceland", region: "Non-Africa" },
+            "355": { country: "Albania", region: "Non-Africa" },
+            "356": { country: "Malta", region: "Non-Africa" },
+            "357": { country: "Cyprus", region: "Non-Africa" },
+            "358": { country: "Finland", region: "Non-Africa" },
+            "359": { country: "Bulgaria", region: "Non-Africa" },
+            "370": { country: "Lithuania", region: "Non-Africa" },
+            "371": { country: "Latvia", region: "Non-Africa" },
+            "372": { country: "Estonia", region: "Non-Africa" },
+            "373": { country: "Moldova", region: "Non-Africa" },
+            "374": { country: "Armenia", region: "Non-Africa" },
+            "375": { country: "Belarus", region: "Non-Africa" },
+            "376": { country: "Andorra", region: "Non-Africa" },
+            "377": { country: "Monaco", region: "Non-Africa" },
+            "380": { country: "Ukraine", region: "Non-Africa" },
+            "381": { country: "Serbia", region: "Non-Africa" },
+            "382": { country: "Montenegro", region: "Non-Africa" },
+            "385": { country: "Croatia", region: "Non-Africa" },
+            "386": { country: "Slovenia", region: "Non-Africa" },
+            "387": { country: "Bosnia and Herzegovina", region: "Non-Africa" },
+            "389": { country: "North Macedonia", region: "Non-Africa" },
+            "420": { country: "Czech Republic", region: "Non-Africa" },
+            "421": { country: "Slovakia", region: "Non-Africa" },
+            "423": { country: "Liechtenstein", region: "Non-Africa" },
+            "500": { country: "Falkland Islands", region: "Non-Africa" },
+            "501": { country: "Belize", region: "Non-Africa" },
+            "502": { country: "Guatemala", region: "Non-Africa" },
+            "503": { country: "El Salvador", region: "Non-Africa" },
+            "504": { country: "Honduras", region: "Non-Africa" },
+            "505": { country: "Nicaragua", region: "Non-Africa" },
+            "506": { country: "Costa Rica", region: "Non-Africa" },
+            "507": { country: "Panama", region: "Non-Africa" },
+            "509": { country: "Haiti", region: "Non-Africa" },
+            "591": { country: "Bolivia", region: "Non-Africa" },
+            "592": { country: "Guyana", region: "Non-Africa" },
+            "593": { country: "Ecuador", region: "Non-Africa" },
+            "595": { country: "Paraguay", region: "Non-Africa" },
+            "598": { country: "Uruguay", region: "Non-Africa" },
+            "599": { country: "Curaçao", region: "Non-Africa" },
+            "670": { country: "East Timor", region: "Non-Africa" },
+            "671": { country: "Guam", region: "Non-Africa" },
+            "673": { country: "Brunei", region: "Non-Africa" },
+            "674": { country: "Nauru", region: "Non-Africa" },
+            "675": { country: "Papua New Guinea", region: "Non-Africa" },
+            "676": { country: "Tonga", region: "Non-Africa" },
+            "677": { country: "Solomon Islands", region: "Non-Africa" },
+            "678": { country: "Vanuatu", region: "Non-Africa" },
+            "679": { country: "Fiji", region: "Non-Africa" },
+            "680": { country: "Palau", region: "Non-Africa" },
+            "681": { country: "Wallis and Futuna", region: "Non-Africa" },
+            "682": { country: "Cook Islands", region: "Non-Africa" },
+            "683": { country: "Niue", region: "Non-Africa" },
+            "684": { country: "American Samoa", region: "Non-Africa" },
+            "685": { country: "Samoa", region: "Non-Africa" },
+            "686": { country: "Kiribati", region: "Non-Africa" },
+            "687": { country: "New Caledonia", region: "Non-Africa" },
+            "688": { country: "Tuvalu", region: "Non-Africa" },
+            "689": { country: "French Polynesia", region: "Non-Africa" },
+            "690": { country: "Tokelau", region: "Non-Africa" },
+            "691": { country: "Micronesia", region: "Non-Africa" },
+            "692": { country: "Marshall Islands", region: "Non-Africa" },
+            "850": { country: "North Korea", region: "Non-Africa" },
+            "852": { country: "Hong Kong", region: "Non-Africa" },
+            "853": { country: "Macao", region: "Non-Africa" },
+            "855": { country: "Cambodia", region: "Non-Africa" },
+            "856": { country: "Laos", region: "Non-Africa" },
+            "880": { country: "Bangladesh", region: "Non-Africa" },
+            "886": { country: "Taiwan", region: "Non-Africa" },
+            "960": { country: "Maldives", region: "Non-Africa" },
+            "961": { country: "Lebanon", region: "Non-Africa" },
+            "962": { country: "Jordan", region: "Non-Africa" },
+            "963": { country: "Syria", region: "Non-Africa" },
+            "964": { country: "Iraq", region: "Non-Africa" },
+            "965": { country: "Kuwait", region: "Non-Africa" },
+            "966": { country: "Saudi Arabia", region: "Non-Africa" },
+            "967": { country: "Yemen", region: "Non-Africa" },
+            "968": { country: "Oman", region: "Non-Africa" },
+            "971": { country: "United Arab Emirates", region: "Non-Africa" },
+            "972": { country: "Israel", region: "Non-Africa" },
+            "973": { country: "Bahrain", region: "Non-Africa" },
+            "974": { country: "Qatar", region: "Non-Africa" },
+            "975": { country: "Bhutan", region: "Non-Africa" },
+            "976": { country: "Mongolia", region: "Non-Africa" },
+            "977": { country: "Nepal", region: "Non-Africa" },
+            "992": { country: "Tajikistan", region: "Non-Africa" },
+            "993": { country: "Turkmenistan", region: "Non-Africa" },
+            "994": { country: "Azerbaijan", region: "Non-Africa" },
+            "995": { country: "Georgia", region: "Non-Africa" },
+            "996": { country: "Kyrgyzstan", region: "Non-Africa" },
+            "998": { country: "Uzbekistan", region: "Non-Africa" },
+            "1242": { country: "Bahamas", region: "Non-Africa" },
+            "1246": { country: "Barbados", region: "Non-Africa" },
+            "1264": { country: "Anguilla", region: "Non-Africa" },
+            "1268": { country: "Antigua and Barbuda", region: "Non-Africa" },
+            "1284": { country: "British Virgin Islands", region: "Non-Africa" },
+            "1345": { country: "Cayman Islands", region: "Non-Africa" },
+            "1441": { country: "Bermuda", region: "Non-Africa" },
+            "1473": { country: "Grenada", region: "Non-Africa" },
+            "1649": { country: "Turks and Caicos", region: "Non-Africa" },
+            "1664": { country: "Montserrat", region: "Non-Africa" },
+            "1721": { country: "Sint Maarten", region: "Non-Africa" },
+            "1758": { country: "Saint Lucia", region: "Non-Africa" },
+            "1767": { country: "Dominica", region: "Non-Africa" },
+            "1784": { country: "St. Vincent & Grenadines", region: "Non-Africa" },
+            "1809": { country: "Dominican Republic", region: "Non-Africa" },
+            "1868": { country: "Trinidad and Tobago", region: "Non-Africa" },
+            "1869": { country: "Saint Kitts and Nevis", region: "Non-Africa" },
+            "1876": { country: "Jamaica", region: "Non-Africa" }
+        };
+
+        // --- 5. Lookup Feature Trigger ---
+        function detectCountry() {
+            const inputField = document.getElementById('code-input');
+            const resultDiv = document.getElementById('result-text');
+            let rawInput = inputField.value.trim().replace(/\+/g, '').replace(/[\s-]/g, '');
+
+            if (rawInput === '') { resultDiv.innerHTML = "Please enter a code."; return; }
+
+            let match = null;
+            // Scan from longest code length to shortest
+            for (let len = 4; len >= 1; len--) {
+                let checkCode = rawInput.substring(0, len);
+                if (dialCodes[checkCode]) { match = dialCodes[checkCode]; break; }
+            }
+
+            if (match) {
+                const badgeClass = match.region === "Africa" ? "africa-bg" : "non-africa-bg";
+                resultDiv.innerHTML = `
+                    Code belongs to:<br>
+                    <span class="highlight">${match.country}</span><br>
+                    <span class="region-tag ${badgeClass}">${match.region.toUpperCase()}</span>
+                `;
+            } else {
+                resultDiv.innerHTML = "Code not found in database.<br>Check and try again.";
+            }
+        }
+    </script>
+</body>
+</html>
